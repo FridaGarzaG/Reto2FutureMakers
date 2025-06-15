@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'constants.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'homePage.dart'; // Asegúrate de que este archivo existe
+import 'package:http/http.dart' as http;
+import 'homePage.dart'; // Asegúrate de que este archivo exista
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +21,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFFBE263B)),
         useMaterial3: true,
         textTheme: ThemeData().textTheme.apply(
-              bodyColor: Colors.black, // Texto base negro
+              bodyColor: Colors.black,
               displayColor: Colors.black,
             ),
       ),
@@ -45,16 +48,53 @@ class _LoginPageState extends State<LoginPage> {
     _focusNode.addListener(() => setState(() {}));
   }
 
-  void _login() {
+  void _login() async {
     String username = usernameController.text.trim();
-    if (username.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
-    } else {
+
+    if (username.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor ingresa tu nombre de usuario')),
+      );
+      return;
+    }
+
+    try {
+      final url = Uri.parse('$backendBaseUrl/api/auth/solicitar-codigo');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'nombre': username}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final mensaje = data['mensaje'];
+        final codigo = data['codigo'];
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$mensaje Código recibido: $codigo'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+
+        // Puedes ir a otra pantalla si quieres
+        // Navigator.push(context, MaterialPageRoute(builder: (context) => const HomePage()));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al solicitar el código.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -72,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
 
           return Stack(
             children: [
-              const GridBackground(), // Fondo cuadriculado
+              const GridBackground(),
               Center(
                 child: SingleChildScrollView(
                   child: Column(
@@ -81,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Bienvenid@ a',
                         style: TextStyle(
                           fontSize: fontSize,
-                          color: Colors.black, // negro
+                          color: Colors.black,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -100,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(
                           fontSize: fontSize + 4,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black, // negro
+                          color: Colors.black,
                         ),
                         textAlign: TextAlign.center,
                       ),

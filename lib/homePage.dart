@@ -54,7 +54,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    productosFiltrados = productos; // Inicializamos la lista de productos filtrados
+    productosFiltrados = productos;
     fallController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -122,7 +122,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(65), // Altura del AppBar
+        preferredSize: const Size.fromHeight(65),
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -139,7 +139,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Botón Atrás restaurado
                   Padding(
                     padding: const EdgeInsets.only(left: 8, right: 8),
                     child: IconButton(
@@ -149,7 +148,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Título
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,19 +163,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-                  // Campo de búsqueda (En pantallas grandes en la esquina derecha, en pantallas pequeñas en un renglón abajo)
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      bool isMobile = constraints.maxWidth < 600; // Pantallas pequeñas (móviles)
+                      bool isMobile = constraints.maxWidth < 600;
                       return isMobile
                           ? Padding(
                               padding: const EdgeInsets.all(8),
                               child: Container(
-                                width: double.infinity,
+                                width: 40,
                                 child: TextField(
                                   onChanged: filtrarProductos,
                                   decoration: InputDecoration(
-                                    hintText: 'Buscar producto',
+                                    hintText: '',
                                     prefixIcon: Icon(Icons.search, color: Colors.grey),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
@@ -206,7 +203,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             );
                     },
                   ),
-                  // Botón Carrito
                   Padding(
                     padding: const EdgeInsets.only(right: 16),
                     child: AnimatedSwitcher(
