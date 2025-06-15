@@ -4,6 +4,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'homePage.dart'; // Asegúrate de que este archivo exista
+import 'registerPage.dart';
+import 'verificationPage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -38,6 +40,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final TextEditingController codigoController = TextEditingController();
+  bool mostrarInputCodigo = false;
   final TextEditingController usernameController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isHovering = false;
@@ -71,6 +75,10 @@ class _LoginPageState extends State<LoginPage> {
         final mensaje = data['mensaje'];
         final codigo = data['codigo'];
 
+        setState(() {
+          mostrarInputCodigo = true;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('$mensaje Código recibido: $codigo'),
@@ -78,9 +86,6 @@ class _LoginPageState extends State<LoginPage> {
             duration: const Duration(seconds: 5),
           ),
         );
-
-        // Puedes ir a otra pantalla si quieres
-        // Navigator.push(context, MaterialPageRoute(builder: (context) => const HomePage()));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -88,6 +93,9 @@ class _LoginPageState extends State<LoginPage> {
             backgroundColor: Colors.red,
           ),
         );
+        setState(() {
+          mostrarInputCodigo = false;
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -164,22 +172,48 @@ class _LoginPageState extends State<LoginPage> {
                                 color: Colors.white.withOpacity(0.85),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: TextField(
-                                controller: usernameController,
-                                focusNode: _focusNode,
-                                decoration: InputDecoration(
-                                  hintText: _focusNode.hasFocus
-                                      ? null
-                                      : 'Ingresa tu nombre de usuario',
-                                  border: const OutlineInputBorder(
-                                    borderSide: BorderSide(),
+                              child: Column(
+                                children: [
+                                  TextField(
+                                    controller: usernameController,
+                                    focusNode: _focusNode,
+                                    decoration: InputDecoration(
+                                      hintText: _focusNode.hasFocus
+                                          ? null
+                                          : 'Ingresa tu nombre de usuario',
+                                      border: const OutlineInputBorder(
+                                          borderSide: BorderSide()),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontSize: fontSize,
+                                        color: Colors.black),
                                   ),
-                                ),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: fontSize,
-                                  color: Colors.black,
-                                ),
+                                  if (mostrarInputCodigo) ...[
+                                    const SizedBox(height: 20),
+                                    Text(
+                                      'Código de verificación',
+                                      style: TextStyle(
+                                        fontSize: fontSize,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFFBE263B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    TextField(
+                                      controller: codigoController,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Ingresa el código recibido',
+                                        border: OutlineInputBorder(
+                                            borderSide: BorderSide()),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: fontSize,
+                                          color: Colors.black),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
                           ],
@@ -226,7 +260,11 @@ class _LoginPageState extends State<LoginPage> {
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
                                     print('Ir a registro');
-                                  },
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const RegisterPage()),
+  );
+},
                               ),
                             ],
                           ),
