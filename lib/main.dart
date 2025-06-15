@@ -192,14 +192,14 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
             right: 10,
             child: Image.asset(
               'imagenes/arca_logo.png',
-              width: 1,
+              width: 0,
               fit: BoxFit.contain,
             ),
           ),
           LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
-              final scale = (width / 400).clamp(0.8, 1.2);
+              final scale = (width / 600).clamp(0.8, 1.2);
               final double inputWidth = scale * 280;
               final double fontSize = scale * 16;
               final double buttonWidth = scale * 180;
@@ -209,7 +209,7 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                   child: Column(
                     children: [
                       Text('Bienvenid@ a', style: TextStyle(fontSize: fontSize), textAlign: TextAlign.center),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
                       Container(
                         width: inputWidth,
                         alignment: Alignment.center,

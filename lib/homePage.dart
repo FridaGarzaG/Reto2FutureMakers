@@ -19,10 +19,10 @@ class Product {
   Product(this.name, this.image, this.price);
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
-    json['nombre'],
-    Product.getImageForProduct(json['nombre']),
-    (json['precio'] as num).toDouble(),
-  );
+        json['nombre'],
+        Product.getImageForProduct(json['nombre']),
+        (json['precio'] as num).toDouble(),
+      );
 
   static String getImageForProduct(String name) {
     switch (name.toLowerCase()) {
@@ -54,10 +54,10 @@ class Product {
   }
 
   Map<String, dynamic> toJson() => {
-    'nombre': name,
-    'imagen': image,
-    'precio': price,
-  };
+        'nombre': name,
+        'imagen': image,
+        'precio': price,
+      };
 }
 
 class HomePage extends StatefulWidget {
@@ -89,6 +89,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.initState();
     fetchProductos();
     productosFiltrados = productos;
+
+    final carritoData = html.window.sessionStorage['carrito'];
+    if (carritoData != null) {
+      final productos = List<Map<String, dynamic>>.from(jsonDecode(carritoData));
+      final totalCantidad = productos.fold<int>(0, (sum, p) => sum + ((p['cantidad'] ?? 1) as int));
+      contadorCarrito = totalCantidad;
+    }
+
     fallController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -115,45 +123,73 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void agregarProducto(Product producto) {
-    setState(() {
-      contadorCarrito++;
-      productosSeleccionados.add(producto);
+    final String? carritoData = html.window.sessionStorage['carrito'];
+    List<Map<String, dynamic>> productos = carritoData != null
+        ? List<Map<String, dynamic>>.from(jsonDecode(carritoData))
+        : [];
 
-      final productosJson = productosSeleccionados.map((e) => e.toJson()).toList();
-      html.window.sessionStorage['carrito'] = jsonEncode(productosJson);
+    final index = productos.indexWhere((p) => p['name'] == producto.name);
+    if (index != -1) {
+      productos[index]['cantidad'] = (productos[index]['cantidad'] ?? 1) + 1;
+    } else {
+      productos.add({
+        'name': producto.name,
+        'price': producto.price,
+        'image': producto.image,
+        'cantidad': 1,
+      });
+    }
+
+    html.window.sessionStorage['carrito'] = jsonEncode(productos);
+
+    final totalCantidad = productos.fold<int>(0, (sum, p) => sum + ((p['cantidad'] ?? 1) as int));
+    setState(() {
+      contadorCarrito = totalCantidad;
     });
   }
 
   void iniciarAnimacionCarrito() async {
-    setState(() => mostrarAnimacion = true);
-    await fallController.forward();
-    setState(() => listoParaRellenar = true);
-    await fillController.forward();
+  setState(() => mostrarAnimacion = true);
+  await fallController.forward();
+  setState(() => listoParaRellenar = true);
+  await fillController.forward();
 
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => CarritoPage(productosSeleccionados: productosSeleccionados),
-        ),
-      );
-    }
+  await Future.delayed(const Duration(milliseconds: 600));
+
+  if (!mounted) return;
+
+  final result = await Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => const CarritoPage()),
+  );
+
+  if (result == true) {
+    final carritoData = html.window.sessionStorage['carrito'];
+    final List<dynamic> productos = carritoData != null ? jsonDecode(carritoData) : [];
+    final totalCantidad = productos.fold<int>(0, (sum, p) {
+      final cantidad = p['cantidad'];
+      return sum + (cantidad is int ? cantidad : (cantidad as num).toInt());
+    });
 
     setState(() {
-      mostrarAnimacion = false;
-      listoParaRellenar = false;
-      relleno = false;
-      fallController.reset();
-      fillController.reset();
+      contadorCarrito = totalCantidad;
     });
   }
+
+  setState(() {
+    mostrarAnimacion = false;
+    listoParaRellenar = false;
+    relleno = false;
+    fallController.reset();
+    fillController.reset();
+  });
+}
+
 
   void filtrarProductos(String query) {
     setState(() {
       filtro = query;
       productosFiltrados = productos
-          .where((producto) =>
-              producto.name.toLowerCase().contains(query.toLowerCase()))
+          .where((producto) => producto.name.toLowerCase().contains(query.toLowerCase()))
           .toList();
     });
   }
@@ -167,6 +203,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // build original UI (omitido por brevedad)
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(65),
