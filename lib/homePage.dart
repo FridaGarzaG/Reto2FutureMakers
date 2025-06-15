@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'carrito.dart';
 
 void main() {
@@ -12,12 +13,51 @@ void main() {
 
 class Product {
   final String name;
+  final String image;
+  final double price;
 
-  Product(this.name);
+  Product(this.name, this.image, this.price);
 
-  Map<String, dynamic> toJson() => {'name': name};
+  factory Product.fromJson(Map<String, dynamic> json) => Product(
+    json['nombre'],
+    Product.getImageForProduct(json['nombre']),
+    (json['precio'] as num).toDouble(),
+  );
 
-  factory Product.fromJson(Map<String, dynamic> json) => Product(json['name']);
+  static String getImageForProduct(String name) {
+    switch (name.toLowerCase()) {
+      case 'coca-cola regular':
+        return 'imagenes/original.jpg';
+      case 'del valle':
+        return 'imagenes/del_valle.jpg';
+      case 'coca-cola light':
+        return 'imagenes/light.jpg';
+      case 'del valle mango':
+        return 'imagenes/mangojpg.jpg';
+      case 'coca-cola sin azúcar':
+        return 'imagenes/sin_azucar.jpg';
+      case 'santa clara entera':
+        return 'imagenes/entera.jpg';
+      case 'ciel natural':
+        return 'imagenes/agua.jpg';
+      case 'santa clara deslactosada':
+        return 'imagenes/deslactosada.jpg';
+      case 'power ade 4 moras':
+        return 'imagenes/power.jpg';
+      case 'joya ponche':
+        return 'imagenes/ponche.jpg';
+      case 'fuzetea mango y manzanilla':
+        return 'imagenes/fuze_tea.jpg';
+      default:
+        return 'imagenes/default.png';
+    }
+  }
+
+  Map<String, dynamic> toJson() => {
+    'nombre': name,
+    'imagen': image,
+    'precio': price,
+  };
 }
 
 class HomePage extends StatefulWidget {
@@ -31,6 +71,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   int contadorCarrito = 0;
   final Color rojoMarca = const Color(0xFFBE263B);
 
+  List<Product> productosSeleccionados = [];
+
   late AnimationController fallController;
   late AnimationController fillController;
   late Animation<double> dotY;
@@ -38,22 +80,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool listoParaRellenar = false;
   bool relleno = false;
 
-  final List<Product> productos = [
-    Product('Pan Bimbo'),
-    Product('Leche Lala'),
-    Product('Azúcar'),
-    Product('Aceite 1L'),
-    Product('Huevos'),
-    Product('Frijol'),
-  ];
-
-  List<Product> productosSeleccionados = [];
+  List<Product> productos = [];
   List<Product> productosFiltrados = [];
   String filtro = '';
 
   @override
   void initState() {
     super.initState();
+    fetchProductos();
     productosFiltrados = productos;
     fallController = AnimationController(
       vsync: this,
@@ -67,6 +101,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+  }
+
+  Future<void> fetchProductos() async {
+    final response = await http.get(Uri.parse('http://localhost:5017/api/productos'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      setState(() {
+        productos = data.map<Product>((item) => Product.fromJson(item)).toList();
+        productosFiltrados = productos;
+      });
+    }
   }
 
   void agregarProducto(Product producto) {
@@ -88,7 +133,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     await Future.delayed(const Duration(milliseconds: 600));
     if (mounted) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const CarritoPage()),
+        MaterialPageRoute(
+          builder: (context) => CarritoPage(productosSeleccionados: productosSeleccionados),
+        ),
       );
     }
 
@@ -321,12 +368,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add, size: 40, color: Colors.blueAccent),
+                  Image.asset(
+                    producto.image,
+                    width: MediaQuery.of(context).size.width * 0.18,
+                    height: MediaQuery.of(context).size.width * 0.18,
+                    fit: BoxFit.contain,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     producto.name,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width * 0.04,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '\$${producto.price.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width * 0.035,
+                      color: Colors.green[800],
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),

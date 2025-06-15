@@ -1,243 +1,55 @@
-import 'dart:convert';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
+import 'homePage.dart'; // Importa el modelo Product
 
-class CarritoPage extends StatefulWidget {
-  const CarritoPage({super.key});
+class CarritoPage extends StatelessWidget {
+  final List<Product> productosSeleccionados;
 
-  @override
-  State<CarritoPage> createState() => _CarritoPageState();
-}
-
-class _CarritoPageState extends State<CarritoPage> {
-  final Color rojoMarca = const Color(0xFFBE263B);
-  String? metodoPagoSeleccionado;
-  final TextEditingController efectivoController = TextEditingController();
+  const CarritoPage({super.key, required this.productosSeleccionados});
 
   @override
   Widget build(BuildContext context) {
-    final String? carritoData = html.window.sessionStorage['carrito'];
-    final List<dynamic> decoded = carritoData != null ? jsonDecode(carritoData) : [];
-    final List<String> productos = decoded.map((e) => e['name'] as String).toList();
-    final double subtotal = productos.length * 25;
-    final double iva = subtotal * 0.16;
-    final double total = subtotal + iva;
+    double subtotal = productosSeleccionados.fold(0, (sum, p) => sum + p.price);
+    double iva = subtotal * 0.16;
+    double total = subtotal + iva;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(65),
-        child: Container(
-             height: 65, 
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-          ),
-          child: SafeArea(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned(
-                  left: 8,
-                  child: TextButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.arrow_back, color: rojoMarca),
-                    label: Text("Atrás", style: TextStyle(fontSize: 14, color: rojoMarca, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Mi Carrito', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    Text('Abarrotes Doña Regina', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: rojoMarca)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+      appBar: AppBar(
+        title: const Text('Carrito'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              children: [
-                // Forma de pago
-                Card(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final bool isWide = constraints.maxWidth > 500;
-                        final paymentWidgets = [
-                          ChoiceChip(
-                            label: Text('Tarjeta', style: TextStyle(color: metodoPagoSeleccionado == 'tarjeta' ? rojoMarca : Colors.black)),
-                            selected: metodoPagoSeleccionado == 'tarjeta',
-                            selectedColor: Colors.white,
-                            backgroundColor: Colors.white,
-                            onSelected: (_) => setState(() => metodoPagoSeleccionado = 'tarjeta'),
-                          ),
-                          const SizedBox(width: 12),
-                          ChoiceChip(
-                            label: Text('Efectivo', style: TextStyle(color: metodoPagoSeleccionado == 'efectivo' ? rojoMarca : Colors.black)),
-                            selected: metodoPagoSeleccionado == 'efectivo',
-                            selectedColor: Colors.white,
-                            backgroundColor: Colors.white,
-                            onSelected: (_) => setState(() => metodoPagoSeleccionado = 'efectivo'),
-                          ),
-                        ];
-
-                        final efectivoInput = metodoPagoSeleccionado == 'efectivo'
-                            ? SizedBox(
-                                width: isWide ? 250 : double.infinity,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: TextField(
-                                    controller: efectivoController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Ingrese la cantidad con la que hará el pago',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                    onChanged: (_) => setState(() {}),
-                                  ),
-                                ),
-                              )
-                            : const SizedBox();
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Forma de pago: (contado)', style: TextStyle(fontSize: 16)),
-                            const SizedBox(height: 12),
-                            isWide
-                                ? Row(
-                                    children: [
-                                      ...paymentWidgets,
-                                      const SizedBox(width: 24),
-                                      efectivoInput,
-                                    ],
-                                  )
-                                : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(children: paymentWidgets),
-                                      efectivoInput,
-                                    ],
-                                  )
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Productos
-                if (productos.isEmpty)
-                  const Center(child: Text('No hay productos en el carrito'))
-                else
-                  ...productos.map((producto) => Card(
-                        color: Colors.white,
-                        elevation: 2,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          leading: const Icon(Icons.shopping_bag),
-                          title: Text(producto, style: const TextStyle(fontSize: 16)),
-                        ),
-                      )),
-                const SizedBox(height: 20),
-
-                // Resumen
-                Card(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text('Total de productos: ${productos.length}', style: const TextStyle(fontSize: 16)),
-                        const Divider(),
-                        Text('IVA de productos: \$${iva.toStringAsFixed(2)}'),
-                        const Divider(),
-                        Text('Total sin IVA: \$${subtotal.toStringAsFixed(2)}'),
-                        const Divider(),
-                        const Text('Fecha de entrega aproximada: 2 días hábiles'),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 80),
-              ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: productosSeleccionados.length,
+                itemBuilder: (context, index) {
+                  final producto = productosSeleccionados[index];
+                  return ListTile(
+                    leading: Image.asset(producto.image, width: 40, height: 40),
+                    title: Text(producto.name),
+                    trailing: Text('\$${producto.price.toStringAsFixed(2)}'),
+                  );
+                },
+              ),
             ),
-          ),
-
-          // Footer
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))],
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final bool isWide = constraints.maxWidth > 500;
-                final montoPago = double.tryParse(efectivoController.text) ?? 0;
-                final bool pagoValido = metodoPagoSeleccionado == 'tarjeta' || (metodoPagoSeleccionado == 'efectivo' && montoPago >= total);
-
-                final button = ElevatedButton(
-                  onPressed: pagoValido
-                      ? () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Pedido confirmado ✅")),
-                          );
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: pagoValido ? rojoMarca : Colors.grey,
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            const Divider(),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('Subtotal (sin IVA): \$${subtotal.toStringAsFixed(2)}'),
+                  Text('IVA (16%): \$${iva.toStringAsFixed(2)}'),
+                  Text(
+                    'Total (con IVA): \$${total.toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  child: const Text(
-                    'Confirmar pedido',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                );
-
-                return isWide
-                    ? Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Total: \$${total.toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          button,
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Total: \$${total.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          button,
-                        ],
-                      );
-              },
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
