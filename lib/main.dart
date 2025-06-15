@@ -40,6 +40,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final List<TextEditingController> _digitControllers =
+    List.generate(5, (index) => TextEditingController());
+
+final List<FocusNode> _digitFocusNodes =
+    List.generate(5, (index) => FocusNode());
+
   final TextEditingController codigoController = TextEditingController();
   bool mostrarInputCodigo = false;
   final TextEditingController usernameController = TextEditingController();
@@ -190,29 +196,54 @@ class _LoginPageState extends State<LoginPage> {
                                         color: Colors.black),
                                   ),
                                   if (mostrarInputCodigo) ...[
-                                    const SizedBox(height: 20),
-                                    Text(
-                                      'Código de verificación',
-                                      style: TextStyle(
-                                        fontSize: fontSize,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFFBE263B),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    TextField(
-                                      controller: codigoController,
-                                      decoration: const InputDecoration(
-                                        hintText: 'Ingresa el código recibido',
-                                        border: OutlineInputBorder(
-                                            borderSide: BorderSide()),
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: fontSize,
-                                          color: Colors.black),
-                                    ),
-                                  ],
+  const SizedBox(height: 20),
+  Align(
+    alignment: Alignment.centerLeft,
+    child: Text(
+      'Código de verificación',
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: FontWeight.bold,
+        color: const Color(0xFFBE263B),
+      ),
+    ),
+  ),
+  const SizedBox(height: 10),
+  SizedBox(
+    width: inputWidth,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(5, (index) {
+        return SizedBox(
+          width: 40,
+          child: TextField(
+            controller: _digitControllers[index],
+            focusNode: _digitFocusNodes[index],
+            maxLength: 1,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 20, color: Colors.black),
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              counterText: '',
+              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            onChanged: (value) {
+              if (value.isNotEmpty && index < 4) {
+                FocusScope.of(context).requestFocus(_digitFocusNodes[index + 1]);
+              }
+              if (value.isEmpty && index > 0) {
+                FocusScope.of(context).requestFocus(_digitFocusNodes[index - 1]);
+              }
+            },
+          ),
+        );
+      }),
+    ),
+  ),
+],
+
                                 ],
                               ),
                             ),
@@ -260,11 +291,11 @@ class _LoginPageState extends State<LoginPage> {
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
                                     print('Ir a registro');
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const RegisterPage()),
-  );
-},
+                                      Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const RegisterPage()),
+                                    );
+                                  },
                               ),
                             ],
                           ),
