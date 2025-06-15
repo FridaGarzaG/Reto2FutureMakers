@@ -1,6 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'homePage.dart'; // Asegúrate de que este archivo existe
+import 'homePage.dart';
+import 'registerPage.dart';
+import 'verificationPage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +20,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFFBE263B)),
         useMaterial3: true,
         textTheme: ThemeData().textTheme.apply(
-              bodyColor: Colors.black, // Texto base negro
+              bodyColor: Colors.black,
               displayColor: Colors.black,
             ),
       ),
@@ -50,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
     if (username.isNotEmpty) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        MaterialPageRoute(builder: (context) => const VerificationPage()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
 
           return Stack(
             children: [
-              const GridBackground(), // Fondo cuadriculado
+              const GridBackground(),
               Center(
                 child: SingleChildScrollView(
                   child: Column(
@@ -81,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Bienvenid@ a',
                         style: TextStyle(
                           fontSize: fontSize,
-                          color: Colors.black, // negro
+                          color: Colors.black,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -100,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(
                           fontSize: fontSize + 4,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black, // negro
+                          color: Colors.black,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -131,9 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                                   hintText: _focusNode.hasFocus
                                       ? null
                                       : 'Ingresa tu nombre de usuario',
-                                  border: const OutlineInputBorder(
-                                    borderSide: BorderSide(),
-                                  ),
+                                  border: const OutlineInputBorder(),
                                 ),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -185,12 +185,20 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
-                                    print('Ir a registro');
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const RegisterPage()),
+                                    );
                                   },
                               ),
                             ],
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 20),
+                      Image.asset(
+                        'imagenes/arca_logo.png',
+                        width: 100,
                       ),
                     ],
                   ),
@@ -204,7 +212,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// Fondo cuadriculado
 class GridBackground extends StatelessWidget {
   const GridBackground({super.key});
 
