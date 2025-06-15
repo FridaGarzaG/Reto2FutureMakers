@@ -184,23 +184,32 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final scale = (width / 400).clamp(0.8, 1.2);
-          final double inputWidth = scale * 280;
-          final double fontSize = scale * 16;
-          final double buttonWidth = scale * 180;
+      body: Stack(
+        children: [
+          const GridBackground(),
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: Image.asset(
+              'imagenes/arca_logo.png',
+              width: 1,
+              fit: BoxFit.contain,
+            ),
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final scale = (width / 400).clamp(0.8, 1.2);
+              final double inputWidth = scale * 280;
+              final double fontSize = scale * 16;
+              final double buttonWidth = scale * 180;
 
-          return Stack(
-            children: [
-              const GridBackground(),
-              Center(
+              return Center(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
                       Text('Bienvenid@ a', style: TextStyle(fontSize: fontSize), textAlign: TextAlign.center),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 20),
                       Container(
                         width: inputWidth,
                         alignment: Alignment.center,
@@ -341,25 +350,13 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                             ),
                           ),
                         ),
-                      const SizedBox(height: 30),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 20.0, bottom: 10),
-                          child: Image.asset(
-                            'imagenes/arca_logo.png',
-                            width: 80,
-                            fit: BoxFit.contain,
-                          )
-                        )
-                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              );
+            },
+          ),
+        ],
       ),
     );
   }
