@@ -3,9 +3,8 @@ import 'constants.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'homePage.dart'; // Asegúrate de que este archivo exista
+import 'homePage.dart';
 import 'registerPage.dart';
-import 'verificationPage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,16 +40,15 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final List<TextEditingController> _digitControllers =
-    List.generate(5, (index) => TextEditingController());
+      List.generate(5, (index) => TextEditingController());
+  final List<FocusNode> _digitFocusNodes =
+      List.generate(5, (index) => FocusNode());
 
-final List<FocusNode> _digitFocusNodes =
-    List.generate(5, (index) => FocusNode());
-
-  final TextEditingController codigoController = TextEditingController();
-  bool mostrarInputCodigo = false;
   final TextEditingController usernameController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  bool mostrarInputCodigo = false;
   bool _isHovering = false;
+  String usuarioGuardado = '';
 
   @override
   void initState() {
@@ -58,7 +56,7 @@ final List<FocusNode> _digitFocusNodes =
     _focusNode.addListener(() => setState(() {}));
   }
 
-  void _login() async {
+  void _solicitarCodigo() async {
     String username = usernameController.text.trim();
 
     if (username.isEmpty) {
@@ -83,6 +81,7 @@ final List<FocusNode> _digitFocusNodes =
 
         setState(() {
           mostrarInputCodigo = true;
+          usuarioGuardado = username;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,6 +101,45 @@ final List<FocusNode> _digitFocusNodes =
         setState(() {
           mostrarInputCodigo = false;
         });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _verificarCodigo() async {
+    String codigo = _digitControllers.map((c) => c.text).join();
+
+    if (codigo.length != 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa los 5 dígitos del código')),
+      );
+      return;
+    }
+
+    try {
+      final url = Uri.parse('$backendBaseUrl/api/auth/verificar-codigo');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'nombre': usuarioGuardado, 'codigo': codigo}),
+      );
+
+      if (response.statusCode == 200) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const HomePage()));
+      } else {
+        final data = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data['mensaje'] ?? 'Código incorrecto'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -133,20 +171,14 @@ final List<FocusNode> _digitFocusNodes =
                     children: [
                       Text(
                         'Bienvenid@ a',
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          color: Colors.black,
-                        ),
+                        style: TextStyle(fontSize: fontSize),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 10),
                       Container(
                         width: inputWidth,
                         alignment: Alignment.center,
-                        child: Image.asset(
-                          'imagenes/Tuali_Logo.png',
-                          fit: BoxFit.contain,
-                        ),
+                        child: Image.asset('imagenes/Tuali_Logo.png', fit: BoxFit.contain),
                       ),
                       const SizedBox(height: 30),
                       Text(
@@ -154,7 +186,6 @@ final List<FocusNode> _digitFocusNodes =
                         style: TextStyle(
                           fontSize: fontSize + 4,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -164,89 +195,87 @@ final List<FocusNode> _digitFocusNodes =
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Usuario',
-                              style: TextStyle(
-                                fontSize: fontSize,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFFBE263B),
+                            if (!mostrarInputCodigo) ...[
+                              Text(
+                                'Usuario',
+                                style: TextStyle(
+                                  fontSize: fontSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFFBE263B),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.85),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Column(
-                                children: [
-                                  TextField(
-                                    controller: usernameController,
-                                    focusNode: _focusNode,
-                                    decoration: InputDecoration(
-                                      hintText: _focusNode.hasFocus
-                                          ? null
-                                          : 'Ingresa tu nombre de usuario',
-                                      border: const OutlineInputBorder(
-                                          borderSide: BorderSide()),
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: fontSize,
-                                        color: Colors.black),
+                              const SizedBox(height: 6),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.85),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: TextField(
+                                  controller: usernameController,
+                                  focusNode: _focusNode,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Ingresa tu nombre de usuario',
+                                    border: OutlineInputBorder(),
                                   ),
-                                  if (mostrarInputCodigo) ...[
-  const SizedBox(height: 20),
-  Align(
-    alignment: Alignment.centerLeft,
-    child: Text(
-      'Código de verificación',
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: FontWeight.bold,
-        color: const Color(0xFFBE263B),
-      ),
-    ),
-  ),
-  const SizedBox(height: 10),
-  SizedBox(
-    width: inputWidth,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(5, (index) {
-        return SizedBox(
-          width: 40,
-          child: TextField(
-            controller: _digitControllers[index],
-            focusNode: _digitFocusNodes[index],
-            maxLength: 1,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20, color: Colors.black),
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              counterText: '',
-              border: OutlineInputBorder(),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-            onChanged: (value) {
-              if (value.isNotEmpty && index < 4) {
-                FocusScope.of(context).requestFocus(_digitFocusNodes[index + 1]);
-              }
-              if (value.isEmpty && index > 0) {
-                FocusScope.of(context).requestFocus(_digitFocusNodes[index - 1]);
-              }
-            },
-          ),
-        );
-      }),
-    ),
-  ),
-],
-
-                                ],
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: fontSize),
+                                ),
                               ),
-                            ),
+                            ] else ...[
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: IconButton(
+                                  icon: const Icon(Icons.arrow_back, color: Colors.black54),
+                                  onPressed: () {
+                                    setState(() {
+                                      mostrarInputCodigo = false;
+                                    });
+                                  },
+                                ),
+                              ),
+                              Text(
+                                'Código de verificación',
+                                style: TextStyle(
+                                  fontSize: fontSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFFBE263B),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: inputWidth,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: List.generate(5, (index) {
+                                    return SizedBox(
+                                      width: 40,
+                                      child: TextField(
+                                        controller: _digitControllers[index],
+                                        focusNode: _digitFocusNodes[index],
+                                        maxLength: 1,
+                                        textAlign: TextAlign.center,
+                                        keyboardType: TextInputType.number,
+                                        style: const TextStyle(fontSize: 20),
+                                        decoration: const InputDecoration(
+                                          counterText: '',
+                                          border: OutlineInputBorder(),
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                        ),
+                                        onChanged: (value) {
+                                          if (value.isNotEmpty && index < 4) {
+                                            FocusScope.of(context).requestFocus(_digitFocusNodes[index + 1]);
+                                          }
+                                          if (value.isEmpty && index > 0) {
+                                            FocusScope.of(context).requestFocus(_digitFocusNodes[index - 1]);
+                                          }
+                                        },
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ]
                           ],
                         ),
                       ),
@@ -259,48 +288,64 @@ final List<FocusNode> _digitFocusNodes =
                             backgroundColor: const Color(0xFFBE263B),
                             foregroundColor: Colors.white,
                           ),
-                          onPressed: _login,
+                          onPressed: mostrarInputCodigo ? _verificarCodigo : _solicitarCodigo,
                           child: Text(
-                            'Iniciar sesión',
+                            mostrarInputCodigo ? 'Comenzar' : 'Iniciar sesión',
                             style: TextStyle(fontSize: fontSize),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      MouseRegion(
-                        onEnter: (_) => setState(() => _isHovering = true),
-                        onExit: (_) => setState(() => _isHovering = false),
-                        child: RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: fontSize,
-                            ),
-                            children: [
-                              const TextSpan(text: '¿No tienes cuenta? '),
-                              TextSpan(
-                                text: 'Regístrate aquí',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFBE263B),
-                                  decoration: _isHovering
-                                      ? TextDecoration.underline
-                                      : TextDecoration.none,
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () {
-                                    print('Ir a registro');
-                                      Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const RegisterPage()),
-                                    );
-                                  },
+                      const SizedBox(height: 10),
+                      if (mostrarInputCodigo)
+                        MouseRegion(
+                          onEnter: (_) => setState(() => _isHovering = true),
+                          onExit: (_) => setState(() => _isHovering = false),
+                          child: GestureDetector(
+                            onTap: _solicitarCodigo,
+                            child: Text(
+                              'Volver a enviar código',
+                              style: TextStyle(
+                                fontSize: fontSize * 0.9,
+                                color: const Color(0xFFBE263B),
+                                decoration: _isHovering ? TextDecoration.underline : TextDecoration.none,
+                                fontWeight: FontWeight.w500,
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                      const SizedBox(height: 10),
+                      if (!mostrarInputCodigo)
+                        MouseRegion(
+                          onEnter: (_) => setState(() => _isHovering = true),
+                          onExit: (_) => setState(() => _isHovering = false),
+                          child: RichText(
+                            textAlign: TextAlign.center,
+                            text: TextSpan(
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: fontSize,
+                              ),
+                              children: [
+                                const TextSpan(text: '¿No tienes cuenta? '),
+                                TextSpan(
+                                  text: 'Regístrate aquí',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFFBE263B),
+                                    decoration: _isHovering ? TextDecoration.underline : TextDecoration.none,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const RegisterPage()),
+                                      );
+                                    },
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
                     ],
                   ),
                 ),
@@ -313,7 +358,6 @@ final List<FocusNode> _digitFocusNodes =
   }
 }
 
-// Fondo cuadriculado
 class GridBackground extends StatelessWidget {
   const GridBackground({super.key});
 
