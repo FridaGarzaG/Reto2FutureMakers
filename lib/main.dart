@@ -38,7 +38,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   final List<TextEditingController> _digitControllers =
       List.generate(5, (index) => TextEditingController());
   final List<FocusNode> _digitFocusNodes =
@@ -47,22 +47,44 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController usernameController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool mostrarInputCodigo = false;
-  bool _isHovering = false;
+  bool _isHoveringRegister = false;
+  bool _isHoveringResend = false;
+  bool _isLoading = false;
   String usuarioGuardado = '';
 
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(() => setState(() {}));
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      for (var controller in _digitControllers) {
+        controller.clear();
+      }
+    }
   }
 
   void _solicitarCodigo() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
     String username = usernameController.text.trim();
 
     if (username.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor ingresa tu nombre de usuario')),
       );
+      setState(() => _isLoading = false);
       return;
     }
 
@@ -110,15 +132,21 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     }
+
+    setState(() => _isLoading = false);
   }
 
   void _verificarCodigo() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
     String codigo = _digitControllers.map((c) => c.text).join();
 
     if (codigo.length != 5) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor ingresa los 5 dígitos del código')),
       );
+      setState(() => _isLoading = false);
       return;
     }
 
@@ -149,6 +177,8 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     }
+
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -169,11 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      Text(
-                        'Bienvenid@ a',
-                        style: TextStyle(fontSize: fontSize),
-                        textAlign: TextAlign.center,
-                      ),
+                      Text('Bienvenid@ a', style: TextStyle(fontSize: fontSize), textAlign: TextAlign.center),
                       const SizedBox(height: 10),
                       Container(
                         width: inputWidth,
@@ -181,14 +207,9 @@ class _LoginPageState extends State<LoginPage> {
                         child: Image.asset('imagenes/Tuali_Logo.png', fit: BoxFit.contain),
                       ),
                       const SizedBox(height: 30),
-                      Text(
-                        'INICIAR SESIÓN',
-                        style: TextStyle(
-                          fontSize: fontSize + 4,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      Text('INICIAR SESIÓN',
+                          style: TextStyle(fontSize: fontSize + 4, fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center),
                       const SizedBox(height: 20),
                       SizedBox(
                         width: inputWidth,
@@ -196,51 +217,21 @@ class _LoginPageState extends State<LoginPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (!mostrarInputCodigo) ...[
-                              Text(
-                                'Usuario',
-                                style: TextStyle(
-                                  fontSize: fontSize,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFBE263B),
-                                ),
-                              ),
+                              Text('Usuario', style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: const Color(0xFFBE263B))),
                               const SizedBox(height: 6),
                               Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.85),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                                decoration: BoxDecoration(color: Colors.white.withOpacity(0.85), borderRadius: BorderRadius.circular(4)),
                                 child: TextField(
                                   controller: usernameController,
                                   focusNode: _focusNode,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Ingresa tu nombre de usuario',
-                                    border: OutlineInputBorder(),
-                                  ),
+                                  decoration: const InputDecoration(hintText: 'Ingresa tu nombre de usuario', border: OutlineInputBorder()),
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: fontSize),
                                 ),
                               ),
                             ] else ...[
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: IconButton(
-                                  icon: const Icon(Icons.arrow_back, color: Colors.black54),
-                                  onPressed: () {
-                                    setState(() {
-                                      mostrarInputCodigo = false;
-                                    });
-                                  },
-                                ),
-                              ),
-                              Text(
-                                'Código de verificación',
-                                style: TextStyle(
-                                  fontSize: fontSize,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFBE263B),
-                                ),
-                              ),
+                              Text('Código de verificación',
+                                  style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: const Color(0xFFBE263B))),
                               const SizedBox(height: 10),
                               SizedBox(
                                 width: inputWidth,
@@ -275,6 +266,28 @@ class _LoginPageState extends State<LoginPage> {
                                   }),
                                 ),
                               ),
+                              const SizedBox(height: 10),
+                              MouseRegion(
+                                onEnter: (_) => setState(() => _isHoveringResend = true),
+                                onExit: (_) => setState(() => _isHoveringResend = false),
+                                child: GestureDetector(
+                                  onTap: _solicitarCodigo,
+                                  child: Text(
+                                    'Volver a enviar código',
+                                    style: TextStyle(
+                                      fontSize: fontSize * 0.9,
+                                      color: const Color(0xFFBE263B),
+                                      decoration: _isHoveringResend ? TextDecoration.underline : TextDecoration.none,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextButton.icon(
+                                onPressed: () => setState(() => mostrarInputCodigo = false),
+                                icon: const Icon(Icons.arrow_back_ios, size: 16, color: Color(0xFFBE263B)),
+                                label: const Text('Volver al ingreso de usuario', style: TextStyle(color: Color(0xFFBE263B))),
+                              )
                             ]
                           ],
                         ),
@@ -288,43 +301,28 @@ class _LoginPageState extends State<LoginPage> {
                             backgroundColor: const Color(0xFFBE263B),
                             foregroundColor: Colors.white,
                           ),
-                          onPressed: mostrarInputCodigo ? _verificarCodigo : _solicitarCodigo,
-                          child: Text(
-                            mostrarInputCodigo ? 'Comenzar' : 'Iniciar sesión',
-                            style: TextStyle(fontSize: fontSize),
-                          ),
+                          onPressed: _isLoading
+                              ? null
+                              : mostrarInputCodigo
+                                  ? _verificarCodigo
+                                  : _solicitarCodigo,
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : Text(
+                                  mostrarInputCodigo ? 'Comenzar' : 'Iniciar sesión',
+                                  style: TextStyle(fontSize: fontSize),
+                                ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      if (mostrarInputCodigo)
-                        MouseRegion(
-                          onEnter: (_) => setState(() => _isHovering = true),
-                          onExit: (_) => setState(() => _isHovering = false),
-                          child: GestureDetector(
-                            onTap: _solicitarCodigo,
-                            child: Text(
-                              'Volver a enviar código',
-                              style: TextStyle(
-                                fontSize: fontSize * 0.9,
-                                color: const Color(0xFFBE263B),
-                                decoration: _isHovering ? TextDecoration.underline : TextDecoration.none,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 20),
                       if (!mostrarInputCodigo)
                         MouseRegion(
-                          onEnter: (_) => setState(() => _isHovering = true),
-                          onExit: (_) => setState(() => _isHovering = false),
+                          onEnter: (_) => setState(() => _isHoveringRegister = true),
+                          onExit: (_) => setState(() => _isHoveringRegister = false),
                           child: RichText(
                             textAlign: TextAlign.center,
                             text: TextSpan(
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: fontSize,
-                              ),
+                              style: TextStyle(color: Colors.black87, fontSize: fontSize),
                               children: [
                                 const TextSpan(text: '¿No tienes cuenta? '),
                                 TextSpan(
@@ -332,20 +330,29 @@ class _LoginPageState extends State<LoginPage> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: const Color(0xFFBE263B),
-                                    decoration: _isHovering ? TextDecoration.underline : TextDecoration.none,
+                                    decoration: _isHoveringRegister ? TextDecoration.underline : TextDecoration.none,
                                   ),
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => const RegisterPage()),
-                                      );
+                                      Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterPage()));
                                     },
                                 ),
                               ],
                             ),
                           ),
+                        ),
+                      const SizedBox(height: 30),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 20.0, bottom: 10),
+                          child: Image.asset(
+                            'imagenes/arca_logo.png',
+                            width: 80,
+                            fit: BoxFit.contain,
+                          )
                         )
+                      ),
                     ],
                   ),
                 ),
