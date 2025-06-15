@@ -102,8 +102,8 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
         final codigo = data['codigo'];
 
         setState(() {
-          mostrarInputCodigo = true;
           usuarioGuardado = username;
+          mostrarInputCodigo = true;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,8 +111,17 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
             content: Text('$mensaje Código recibido: $codigo'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 5),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(top: 30, left: 20, right: 20),
           ),
         );
+
+        // Mini delay antes de autorellenar
+        Future.delayed(const Duration(milliseconds: 1250), () {
+          for (int i = 0; i < 5 && i < codigo.length; i++) {
+            _digitControllers[i].text = codigo[i];
+          }
+        });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -208,6 +217,7 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      const SizedBox(height: 50), // <-- Esto sube el contenido
                       Text('Bienvenid@ a', style: TextStyle(fontSize: fontSize), textAlign: TextAlign.center),
                       const SizedBox(height: 10),
                       Container(
@@ -276,27 +286,26 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              MouseRegion(
-                                onEnter: (_) => setState(() => _isHoveringResend = true),
-                                onExit: (_) => setState(() => _isHoveringResend = false),
-                                child: GestureDetector(
-                                  onTap: _solicitarCodigo,
-                                  child: Text(
-                                    'Volver a enviar código',
-                                    style: TextStyle(
-                                      fontSize: fontSize * 0.9,
-                                      color: const Color(0xFFBE263B),
-                                      decoration: _isHoveringResend ? TextDecoration.underline : TextDecoration.none,
+                              Center(
+                                child: MouseRegion(
+                                  onEnter: (_) => setState(() => _isHoveringResend = true),
+                                  onExit: (_) => setState(() => _isHoveringResend = false),
+                                  child: GestureDetector(
+                                    onTap: _solicitarCodigo,
+                                    child: Text(
+                                      'Volver a enviar código',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: fontSize * 0.8, // Más pequeño
+                                        fontWeight: FontWeight.bold, // Negritas
+                                        color: const Color(0xFFBE263B),
+                                        decoration: _isHoveringResend ? TextDecoration.underline : TextDecoration.none,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              TextButton.icon(
-                                onPressed: () => setState(() => mostrarInputCodigo = false),
-                                icon: const Icon(Icons.arrow_back_ios, size: 16, color: Color(0xFFBE263B)),
-                                label: const Text('Volver al ingreso de usuario', style: TextStyle(color: Color(0xFFBE263B))),
-                              )
+
                             ]
                           ],
                         ),
@@ -347,6 +356,27 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                                     },
                                 ),
                               ],
+                            ),
+                          ),
+                        ),
+                      // Solo este botón debajo de "Comenzar"
+                      if (mostrarInputCodigo)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12.0),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                mostrarInputCodigo = false;
+                                // Limpia los campos del código si lo deseas:
+                                for (final c in _digitControllers) {
+                                  c.clear();
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.arrow_back_ios, size: 10, color: Color(0xFFBE263B)),
+                            label: const Text(
+                              'Volver al ingreso de usuario',
+                              style: TextStyle(color: Color(0xFFBE263B)),
                             ),
                           ),
                         ),
