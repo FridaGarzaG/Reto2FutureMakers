@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'homePage.dart';
+import 'main.dart'; 
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -21,15 +24,30 @@ class _RegisterPageState extends State<RegisterPage> {
     _focusPhone.addListener(() => setState(() {}));
   }
 
-  void _register() {
+  Future<void> _register() async {
     String username = usernameController.text.trim();
     String phone = phoneController.text.trim();
 
     if (username.isNotEmpty && phone.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+      final response = await http.post(
+        Uri.parse('http://localhost:5017/api/auth/registro'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'nombre': username,
+          'telefono': phone,
+        }),
       );
+
+      if (response.statusCode == 200) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyApp()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al registrar: ${response.body}')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor completa todos los campos')),
